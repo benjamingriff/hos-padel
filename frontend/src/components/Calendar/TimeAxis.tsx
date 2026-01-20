@@ -10,14 +10,21 @@ export default function TimeAxis() {
         <span className="text-xs text-textMuted">Time</span>
       </div>
       {/* Time labels */}
-      {timeSlots.map((time) => (
-        <div
-          key={time}
-          className="h-10 flex items-center justify-end pr-2 text-xs text-textMuted"
-        >
-          {time}
-        </div>
-      ))}
+      <div className="flex flex-col gap-0.5">
+        {timeSlots.map((time, index) => {
+          const isLast = index === timeSlots.length - 1
+
+          return (
+            <div
+              key={time}
+              className="h-10 flex flex-col items-end justify-start pr-2 text-[11px] text-textMuted leading-none"
+            >
+              <span>{time.endsWith(':00') ? time : ''}</span>
+              {isLast ? <span className="mt-auto">23:00</span> : null}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
