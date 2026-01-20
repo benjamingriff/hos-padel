@@ -12,13 +12,13 @@ export default function TimeSlot({ slot, isLoading }: TimeSlotProps) {
 
   if (isLoading) {
     return (
-      <div className="h-10 bg-gray-100 animate-pulse rounded border border-gray-200" />
+      <div className="h-10 bg-surfaceMuted animate-pulse rounded border border-border" />
     )
   }
 
   if (!slot) {
     return (
-      <div className="h-10 bg-gray-50 rounded border border-gray-200 border-dashed" />
+      <div className="h-10 bg-background rounded border border-border border-dashed" />
     )
   }
 
@@ -30,11 +30,11 @@ export default function TimeSlot({ slot, isLoading }: TimeSlotProps) {
         onClick={() => setShowPopover(!showPopover)}
         className={`
           w-full h-10 rounded border text-xs font-medium transition-colors
-          focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1
+          focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-1
           ${
             slot.has_available_court
-              ? 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200'
-              : 'bg-gray-200 border-gray-300 text-gray-600 hover:bg-gray-300'
+              ? 'bg-brandSoft border-brand/30 text-brand hover:bg-brand/20'
+              : 'bg-surfaceMuted border-border text-textMuted hover:bg-surface'
           }
         `}
         aria-label={`${slot.start_time} - ${slot.end_time}: ${

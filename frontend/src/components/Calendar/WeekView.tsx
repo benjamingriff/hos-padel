@@ -18,7 +18,7 @@ export default function WeekView({
   const weekDates = getWeekDates(weekStart)
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-border shadow-soft overflow-hidden">
       <div className="flex p-4 gap-1 overflow-x-auto">
         {/* Time axis on the left */}
         <div className="flex-shrink-0 w-14">
@@ -43,17 +43,17 @@ export default function WeekView({
       </div>
 
       {/* Legend */}
-      <div className="border-t border-gray-200 px-4 py-2 bg-gray-50 flex items-center gap-4 text-xs text-gray-600">
+      <div className="border-t border-border px-4 py-2 bg-surfaceMuted flex items-center gap-4 text-xs text-textMuted">
         <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-green-100 border border-green-300 rounded" />
+          <div className="w-4 h-4 bg-brandSoft border border-brand/30 rounded" />
           <span>Available</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded" />
+          <div className="w-4 h-4 bg-surface border border-border rounded" />
           <span>Fully booked</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gray-50 border border-gray-200 border-dashed rounded" />
+          <div className="w-4 h-4 bg-background border border-border border-dashed rounded" />
           <span>No data</span>
         </div>
       </div>

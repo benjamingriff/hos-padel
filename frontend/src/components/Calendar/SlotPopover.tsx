@@ -40,16 +40,16 @@ export default function SlotPopover({ slot, onClose }: SlotPopoverProps) {
   return (
     <div
       ref={popoverRef}
-      className="absolute z-50 w-56 bg-white rounded-lg shadow-lg border border-gray-200 p-3 -translate-x-1/2 left-1/2 mt-1"
+      className="absolute z-50 w-56 bg-surface rounded-lg shadow-lg border border-border p-3 -translate-x-1/2 left-1/2 mt-1"
     >
       <div className="mb-2">
-        <div className="font-medium text-gray-900">
+        <div className="font-medium text-textPrimary">
           {slot.start_time} - {slot.end_time}
         </div>
-        <div className="text-sm text-gray-500">{slot.date}</div>
+        <div className="text-sm text-textMuted">{slot.date}</div>
       </div>
 
-      <div className="mb-2 text-sm font-medium text-gray-700">
+      <div className="mb-2 text-sm font-medium text-textMuted">
         {availableCount} of {totalCount} courts available
       </div>
 
@@ -59,12 +59,12 @@ export default function SlotPopover({ slot, onClose }: SlotPopoverProps) {
             key={court.court_id}
             className="flex items-center justify-between text-sm"
           >
-            <span className="text-gray-600">{court.court_name}</span>
+            <span className="text-textMuted">{court.court_name}</span>
             <span
               className={
                 court.is_booked
-                  ? 'text-red-600 font-medium'
-                  : 'text-green-600 font-medium'
+                  ? 'text-red-400 font-medium'
+                  : 'text-brand font-medium'
               }
             >
               {court.is_booked ? 'Booked' : 'Free'}

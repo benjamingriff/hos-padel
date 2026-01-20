@@ -29,13 +29,13 @@ export default function DayColumn({
       <div
         className={`
           h-10 flex items-end justify-center pb-1 text-sm font-medium
-          ${isToday ? 'text-green-600' : 'text-gray-700'}
+          ${isToday ? 'text-brand' : 'text-textMuted'}
         `}
       >
         <span
           className={
             isToday
-              ? 'bg-green-600 text-white px-2 py-0.5 rounded-full'
+              ? 'bg-brand text-white px-2 py-0.5 rounded-full'
               : ''
           }
         >
