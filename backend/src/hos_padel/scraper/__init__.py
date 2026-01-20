@@ -1,0 +1,1 @@
+"""EZFacility scraper module."""
