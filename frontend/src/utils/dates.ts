@@ -22,6 +22,13 @@ export function formatWeekNavDate(date: Date): string {
 }
 
 /**
+ * Format a date for display in day navigation (e.g., "Tue 21 Jan")
+ */
+export function formatDayNavDate(date: Date): string {
+  return format(date, 'EEE d MMM')
+}
+
+/**
  * Get an array of 7 dates starting from the given date (Monday)
  */
 export function getWeekDates(weekStart: Date): Date[] {
