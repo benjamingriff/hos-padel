@@ -19,26 +19,25 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Debug variables
-        run: |
-          echo "AWS_REGION='${{ vars.AWS_REGION }}'"
-
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/GitHubActions-hos-padel-DeployRole
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Who am I?
-        run: aws sts get-caller-identity
-
-      - name: Install deps
-        working-directory: infrastructure
+      # Build frontend first (CDK BucketDeployment needs the dist folder)
+      - name: Install frontend deps
+        working-directory: frontend
         run: npm ci
 
-      - name: CDK synth
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      # CDK deploy (handles backend, frontend upload, and CloudFront invalidation)
+      - name: Install infrastructure deps
         working-directory: infrastructure
-        run: npx cdk synth
+        run: npm ci
 
       - name: CDK deploy
         working-directory: infrastructure
