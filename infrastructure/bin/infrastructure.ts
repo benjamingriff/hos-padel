@@ -25,6 +25,8 @@ const app = new cdk.App();
 new CiIamStack(app, "CiIamStack", {
   githubOwner: "benjamingriff",
   githubRepo: "hos-padel",
+  existingOidcProviderArn:
+    "arn:aws:iam::058264412626:oidc-provider/token.actions.githubusercontent.com",
 });
 
 // new InfrastructureStack(app, "HOSPadelStack", props);
