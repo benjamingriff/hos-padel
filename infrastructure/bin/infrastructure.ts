@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from "aws-cdk-lib";
-import { CiIamStack } from "../lib/ci-iam-stack";
+// import { GitHubDeployStack } from "../lib/github-deploy-stack";
 import { InfrastructureStack } from "../lib/infrastructure-stack";
 import {
   InfrastructureStackProps,
@@ -11,22 +11,24 @@ import {
 
 const app = new cdk.App();
 
-// const props: InfrastructureStackProps = {
+const props: InfrastructureStackProps = {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
+  projectName: "hos-padel",
+  cpu: DEFAULT_CPU,
+  memoryMiB: DEFAULT_MEMORY_MIB,
+  desiredCount: DEFAULT_DESIRED_COUNT,
+};
+
+// new GitHubDeployStack(app, "HOSPadelDeployStack", {
 //   env: {
 //     account: process.env.CDK_DEFAULT_ACCOUNT,
 //     region: process.env.CDK_DEFAULT_REGION,
 //   },
-//   projectName: "hos-padel",
-//   cpu: DEFAULT_CPU,
-//   memoryMiB: DEFAULT_MEMORY_MIB,
-//   desiredCount: DEFAULT_DESIRED_COUNT,
-// };
+//   githubOwner: "benjamingriff",
+//   githubRepo: "hos-padel",
+// });
 
-new CiIamStack(app, "CiIamStack", {
-  githubOwner: "benjamingriff",
-  githubRepo: "hos-padel",
-  existingOidcProviderArn:
-    "arn:aws:iam::058264412626:oidc-provider/token.actions.githubusercontent.com",
-});
-
-// new InfrastructureStack(app, "HOSPadelStack", props);
+new InfrastructureStack(app, "HOSPadelStack", props);
