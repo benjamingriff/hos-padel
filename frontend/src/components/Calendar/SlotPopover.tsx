@@ -4,9 +4,10 @@ import { TimeSlot } from '../../types/api'
 interface SlotPopoverProps {
   slot: TimeSlot
   onClose: () => void
+  position: 'above' | 'below'
 }
 
-export default function SlotPopover({ slot, onClose }: SlotPopoverProps) {
+export default function SlotPopover({ slot, onClose, position }: SlotPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
 
   const availableCount = slot.courts.filter((c) => !c.is_booked).length
@@ -40,7 +41,9 @@ export default function SlotPopover({ slot, onClose }: SlotPopoverProps) {
   return (
     <div
       ref={popoverRef}
-      className="absolute z-50 w-56 bg-surface rounded-lg shadow-lg border border-border p-3 -translate-x-1/2 left-1/2 mt-1"
+      className={`absolute z-50 w-56 bg-surface rounded-lg shadow-lg border border-border p-3 -translate-x-1/2 left-1/2 ${
+        position === 'above' ? 'bottom-full mb-1' : 'top-full mt-1'
+      }`}
     >
       <div className="mb-2">
         <div className="font-medium text-textPrimary">

@@ -5,9 +5,11 @@ import SlotPopover from './SlotPopover'
 interface TimeSlotProps {
   slot: TimeSlotType | null
   isLoading?: boolean
+  slotIndex: number
+  totalSlots: number
 }
 
-export default function TimeSlot({ slot, isLoading }: TimeSlotProps) {
+export default function TimeSlot({ slot, isLoading, slotIndex, totalSlots }: TimeSlotProps) {
   const [showPopover, setShowPopover] = useState(false)
 
   if (isLoading) {
@@ -23,6 +25,7 @@ export default function TimeSlot({ slot, isLoading }: TimeSlotProps) {
   }
 
   const availableCount = slot.courts.filter((c) => !c.is_booked).length
+  const popoverPosition = slotIndex < totalSlots / 2 ? 'below' : 'above'
 
   return (
     <div className="relative">
@@ -46,7 +49,7 @@ export default function TimeSlot({ slot, isLoading }: TimeSlotProps) {
         {slot.has_available_court ? `${availableCount} free` : 'Full'}
       </button>
       {showPopover && (
-        <SlotPopover slot={slot} onClose={() => setShowPopover(false)} />
+        <SlotPopover slot={slot} onClose={() => setShowPopover(false)} position={popoverPosition} />
       )}
     </div>
   )

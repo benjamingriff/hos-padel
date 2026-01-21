@@ -45,11 +45,13 @@ export default function DayColumn({
 
       {/* Time slots */}
       <div className="flex flex-col gap-0.5">
-        {timeLabels.map((time) => (
+        {timeLabels.map((time, index) => (
           <TimeSlot
             key={time}
             slot={slotsByTime.get(time) || null}
             isLoading={isLoading}
+            slotIndex={index}
+            totalSlots={timeLabels.length}
           />
         ))}
       </div>
