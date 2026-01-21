@@ -42,10 +42,9 @@ export class InfrastructureStack extends cdk.Stack {
       },
       additionalBehaviors: {
         "/api/*": {
-          origin: new origins.HttpOrigin(
-            cdk.Fn.select(2, cdk.Fn.split("/", backend.serviceUrl)),
-            { protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY },
-          ),
+          origin: new origins.HttpOrigin(backend.serviceUrl, {
+            protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
+          }),
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
