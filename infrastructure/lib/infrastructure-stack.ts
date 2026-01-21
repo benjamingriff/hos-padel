@@ -1,92 +1,119 @@
-import * as path from 'path';
-import * as cdk from 'aws-cdk-lib';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import { Construct } from 'constructs';
-import { InfrastructureStackProps, DEFAULT_CPU, DEFAULT_MEMORY_MIB, DEFAULT_DESIRED_COUNT } from './config';
-import { FargateService } from './constructs/fargate-service';
+import * as path from "path";
+import * as cdk from "aws-cdk-lib";
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
+import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
+import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
+import { Construct } from "constructs";
+import { FrontendBucket } from "./constructs/frontend-bucket";
+import { BackendService } from "./constructs/backend-service";
+
+export interface InfrastructureStackProps extends cdk.StackProps {
+  projectName: string;
+}
 
 export class InfrastructureStack extends cdk.Stack {
+  public readonly distributionId: string;
+  public readonly bucketName: string;
+  public readonly cloudfrontUrl: string;
+
   constructor(scope: Construct, id: string, props: InfrastructureStackProps) {
     super(scope, id, props);
 
-    const vpc = ec2.Vpc.fromLookup(this, 'DefaultVpc', {
-      isDefault: true,
+    // Frontend: S3 bucket for static files
+    const frontend = new FrontendBucket(this, "Frontend", {
+      bucketName: `${props.projectName}-frontend`,
     });
 
-    const cluster = new ecs.Cluster(this, 'EcsCluster', {
-      vpc,
-      clusterName: `${props.projectName}-cluster`,
+    // Backend: App Runner service
+    const backend = new BackendService(this, "Backend", {
+      serviceName: `${props.projectName}-api`,
+      dockerImagePath: path.join(__dirname, "../../backend"),
+      port: 8000,
+      healthCheckPath: "/api/health",
     });
 
-    const alb = new elbv2.ApplicationLoadBalancer(this, 'ALB', {
-      vpc,
-      internetFacing: true,
-      loadBalancerName: `${props.projectName}-alb`,
+    // CloudFront distribution with path-based routing
+    const distribution = new cloudfront.Distribution(this, "Distribution", {
+      comment: `${props.projectName} distribution`,
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(frontend.bucket),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+      },
+      additionalBehaviors: {
+        "/api/*": {
+          origin: new origins.HttpOrigin(
+            cdk.Fn.select(2, cdk.Fn.split("/", backend.serviceUrl)),
+            { protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY },
+          ),
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
+      },
+      defaultRootObject: "index.html",
+      errorResponses: [
+        {
+          httpStatus: 404,
+          responseHttpStatus: 200,
+          responsePagePath: "/index.html",
+          ttl: cdk.Duration.minutes(5),
+        },
+        {
+          httpStatus: 403,
+          responseHttpStatus: 200,
+          responsePagePath: "/index.html",
+          ttl: cdk.Duration.minutes(5),
+        },
+      ],
     });
 
-    const backendTaskRole = new iam.Role(this, 'BackendTaskRole', {
-      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-      description: 'Task role for backend service with DynamoDB access',
-    });
-
-    const backendService = new FargateService(this, 'BackendService', {
-      cluster,
-      vpc,
-      dockerImagePath: path.join(__dirname, '../../backend'),
-      containerPort: 8000,
-      cpu: props.cpu ?? DEFAULT_CPU,
-      memoryMiB: props.memoryMiB ?? DEFAULT_MEMORY_MIB,
-      desiredCount: props.desiredCount ?? DEFAULT_DESIRED_COUNT,
-      healthCheckPath: '/api/health',
-      taskRole: backendTaskRole,
-    });
-
-    const frontendService = new FargateService(this, 'FrontendService', {
-      cluster,
-      vpc,
-      dockerImagePath: path.join(__dirname, '../../frontend'),
-      containerPort: 80, // nginx
-      cpu: props.cpu ?? DEFAULT_CPU,
-      memoryMiB: props.memoryMiB ?? DEFAULT_MEMORY_MIB,
-      desiredCount: props.desiredCount ?? DEFAULT_DESIRED_COUNT,
-      healthCheckPath: '/',
-    });
-
-    const listener = alb.addListener('HttpListener', {
-      port: 80,
-      open: true,
-      defaultAction: elbv2.ListenerAction.forward([frontendService.targetGroup]),
-    });
-
-    // Add listener rule for /api/* path to route to backend
-    listener.addAction('ApiRoute', {
-      priority: 10,
-      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/*'])],
-      action: elbv2.ListenerAction.forward([backendService.targetGroup]),
-    });
-
-    // Allow ALB to communicate with backend service
-    backendService.service.connections.allowFrom(
-      alb,
-      ec2.Port.tcp(8000),
-      'Allow ALB to reach backend service'
+    // Grant CloudFront access to S3 bucket
+    frontend.grantCloudFrontAccess(
+      `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
     );
 
-    // Allow ALB to communicate with frontend service
-    frontendService.service.connections.allowFrom(
-      alb,
-      ec2.Port.tcp(80),
-      'Allow ALB to reach frontend service'
-    );
+    // Deploy frontend files to S3 and invalidate CloudFront
+    new s3deploy.BucketDeployment(this, "DeployFrontend", {
+      sources: [
+        s3deploy.Source.asset(path.join(__dirname, "../../frontend/dist")),
+      ],
+      destinationBucket: frontend.bucket,
+      distribution,
+      distributionPaths: ["/*"],
+    });
 
-    // Export ALB DNS name as CloudFormation output
-    new cdk.CfnOutput(this, 'AlbDnsName', {
-      value: alb.loadBalancerDnsName,
-      description: 'Application Load Balancer DNS Name',
-      exportName: `${props.projectName}-alb-dns`,
+    // Store values for exports
+    this.distributionId = distribution.distributionId;
+    this.bucketName = frontend.bucket.bucketName;
+    this.cloudfrontUrl = `https://${distribution.distributionDomainName}`;
+
+    // Outputs
+    new cdk.CfnOutput(this, "CloudFrontURL", {
+      value: this.cloudfrontUrl,
+      description: "CloudFront Distribution URL",
+      exportName: `${props.projectName}-cloudfront-url`,
+    });
+
+    new cdk.CfnOutput(this, "AppRunnerServiceURL", {
+      value: `https://${backend.serviceUrl}`,
+      description: "App Runner Service URL (backend API)",
+      exportName: `${props.projectName}-apprunner-url`,
+    });
+
+    new cdk.CfnOutput(this, "S3BucketName", {
+      value: frontend.bucket.bucketName,
+      description: "S3 Bucket for frontend files",
+      exportName: `${props.projectName}-s3-bucket`,
+    });
+
+    new cdk.CfnOutput(this, "CloudFrontDistributionId", {
+      value: distribution.distributionId,
+      description: "CloudFront Distribution ID (for cache invalidation)",
+      exportName: `${props.projectName}-distribution-id`,
     });
   }
 }

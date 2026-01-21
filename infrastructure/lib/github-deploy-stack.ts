@@ -9,6 +9,10 @@ export interface GitHubDeployStackProps extends StackProps {
   readonly cdkQualifier?: string;
 }
 
+/**
+ * One-time setup stack that creates the GitHub Actions deployment role.
+ * Deploy this stack once with admin credentials before using CI/CD.
+ */
 export class GitHubDeployStack extends Stack {
   public readonly deployRole: iam.Role;
 
@@ -28,7 +32,7 @@ export class GitHubDeployStack extends Stack {
 
     const sub = `repo:${props.githubOwner}/${props.githubRepo}:ref:refs/heads/${githubBranch}`;
 
-    // Create a project-specific role
+    // Create deployment role for GitHub Actions
     this.deployRole = new iam.Role(this, "DeployRole", {
       roleName: `GitHubActions-${props.githubRepo}-DeployRole`,
       assumedBy: new iam.WebIdentityPrincipal(
@@ -42,8 +46,10 @@ export class GitHubDeployStack extends Stack {
       ),
     });
 
+    // CDK deployment permissions (assume CDK roles)
     this.deployRole.addToPolicy(
       new iam.PolicyStatement({
+        sid: "CDKAssumeRole",
         actions: ["sts:AssumeRole"],
         resources: [`arn:aws:iam::${this.account}:role/cdk-${cdkQualifier}-*`],
       }),
