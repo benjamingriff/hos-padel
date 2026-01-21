@@ -6,9 +6,6 @@ services:
     container_name: hos-padel-api
     ports:
       - "8000:8000"
-    environment:
-      - EZFACILITY_LOCATION_ID=17555
-      - EZFACILITY_RENTAL_TYPE_ID=271998
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
